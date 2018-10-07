@@ -4,14 +4,17 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.system.measureNanoTime
 
-// information to benchmark
-val count = 1000
-val arrayLength = 32
-
 fun main(args: Array<String>) {
+    val input = Scanner(System.`in`)
 
+    println("Please enter the number you want to execute.")
+    val count = input.nextInt()
+
+    println("Please enter the length of bytes to be generated.")
+    val arrayLength = input.nextInt()
+
+    println()
     println("==== ByteArray to Hex String Benchmark ====")
-
     // get Hardware information using oshi
     val systemInfo = SystemInfo()
     val operatingSystem = systemInfo.operatingSystem
@@ -26,7 +29,7 @@ fun main(args: Array<String>) {
     println("Time: ${SimpleDateFormat("yyyy-MM-dd a hh:mm:ss").format(Date().time)}")
 
     println()
-    println("Starting with count as $count")
+    println("Starting with count as $count with length of ByteArray as $arrayLength")
     println("Measure in progress...")
     println()
 
@@ -35,29 +38,30 @@ fun main(args: Array<String>) {
     SecureRandom.getInstanceStrong().nextBytes(bytes)
 
     // measure
-    val builderFormatTime = measure { BuilderFormat.toHexString(bytes) }
-    val stringFormatTime = measure { StringFormat.toHexString(bytes) }
-    val charArrayRightShiftTime = measure { CharArrayRightShift.toHexString(bytes) }
-    val builderShiftTime = measure { BuilderShift.toHexString(bytes) }
-    val charArrayShiftTime = measure { CharArrayShift.toHexString(bytes) }
+    val builderFormatTime = measure(count) { BuilderFormat.toHexString(bytes) }
+    val stringFormatTime = measure(count) { StringFormat.toHexString(bytes) }
+    val charArrayRightShiftTime = measure(count) { CharArrayRightShift.toHexString(bytes) }
+    val builderShiftTime = measure(count) { BuilderShift.toHexString(bytes) }
+    val charArrayShiftTime = measure(count) { CharArrayShift.toHexString(bytes) }
+    val totalTime = builderFormatTime + stringFormatTime + charArrayRightShiftTime + builderShiftTime + charArrayShiftTime
+
 
     // print result
-    println("BuilderFormat ${builderFormatTime}ms")
-    println("StringFormat ${stringFormatTime}ms")
-    println("CharArrayRightShift ${charArrayRightShiftTime}ms")
-    println("BuilderShift ${builderShiftTime}ms")
-    println("CharArrayShift ${charArrayShiftTime}ms")
+    println("BuilderFormat ${String.format("%.3f", builderFormatTime.toFloat())}ms")
+    println("StringFormat ${String.format("%.3f", stringFormatTime.toFloat())}ms")
+    println("CharArrayRightShift ${String.format("%.3f", charArrayRightShiftTime.toFloat())}ms")
+    println("BuilderShift ${String.format("%.3f", builderShiftTime.toFloat())}ms")
+    println("CharArrayShift ${String.format("%.3f", charArrayShiftTime.toFloat())}ms")
     println()
-    println("Finished!")
+    println("Finished! in ${String.format("%.3f", totalTime.toFloat())}ms")
 }
 
-private fun measure(block: () -> Unit): String {
+private fun measure(count: Int, block: () -> Unit): Double {
     val nano = measureNanoTime {
         for (i in 0 until count) {
             block()
         }
     }
 
-    val ms = nano / 1000000.0
-    return String.format("%.3f", ms.toFloat())
+    return nano / 1000000.0
 }
